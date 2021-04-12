@@ -7,10 +7,10 @@ namespace Zadanie_5.Services
     {
         public Task<bool> CheckIfProductIdExists(int idProduct);
         public Task<bool> CheckIfWarehouseIdExists(int idWarehouse);
-        public Task<int> CheckIfOrderExists(int idProduct, int amount);
+        public Task<Order> CheckIfOrderExists(int idProduct, int amount);
         public Task<bool> CheckIfOrderNotRealised(int idOrder);
         public Task<bool> CheckIfOrderExistsInProduct_Warehouse(int idOrder);
-        void UpdateFullfilledAt(int idOrder);
-        int InsertIntoProduct_Warehouse(int idOrder, Product product);
+        public void UpdateFullfilledAt(int idOrder);
+        public Task<int> InsertIntoProduct_Warehouse(Product product, Order order);
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Zadanie_5.Models;
@@ -33,28 +32,29 @@ namespace Zadanie_5.Controllers
                     return StatusCode(400, "Such Warehouse Id doesn't exists");
             }
             
-            var idOrder = _service.CheckIfOrderExists(product.IdProduct, product.Amount).Result;
+            var order = _service.CheckIfOrderExists(product.IdProduct, product.Amount).Result;
 
-            switch (idOrder)
+            switch (order == null)
             {
-                case (-1):
+                case true:
                     return StatusCode(400, "Such Order Id doesn't exists");
             }
 
-            switch (await _service.CheckIfOrderNotRealised(idOrder))
+            switch (await _service.CheckIfOrderNotRealised(order.IdOrder))
             {
                 case false:
                     return StatusCode(400, "Such Order is already realised");
             }
             
-            switch (await _service.CheckIfOrderExistsInProduct_Warehouse(idOrder))
+            switch (await _service.CheckIfOrderExistsInProduct_Warehouse(order.IdOrder))
             {
                 case true:
                     return StatusCode(400, "Such Order already exists in Product_Warehouse");
             };
 
-            _service.UpdateFullfilledAt(idOrder);
-            return Ok(_service.InsertIntoProduct_Warehouse(idOrder, product));
+            
+            _service.UpdateFullfilledAt(order.IdOrder);
+            return Ok(_service.InsertIntoProduct_Warehouse(product, order).Result);
         }
     }
 }

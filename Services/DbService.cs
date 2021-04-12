@@ -44,9 +44,9 @@ namespace Zadanie_5.Services
             return ExecuteSql(command).Result;
         }
 
-        public async Task<int> CheckIfOrderExists(int idProduct, int amount)
+        public async Task<Order> CheckIfOrderExists(int idProduct, int amount)
         {
-            const string sqlCommand = "SELECT 1 FROM [Order] WHERE IdProduct=@idProduct AND Amount=@amount";
+            const string sqlCommand = "SELECT * FROM [Order] WHERE IdProduct=@idProduct AND Amount=@amount";
             await using var command = new SqlCommand(sqlCommand);
             command.Parameters.AddWithValue("@idProduct", idProduct);
             command.Parameters.AddWithValue("@amount", amount);
@@ -60,10 +60,16 @@ namespace Zadanie_5.Services
             switch (reader.ReadAsync().Result)
             {
                 case true:
-                    return reader.GetInt32(0);
+                    return new Order
+                    {
+                        IdOrder = int.Parse(reader["IdOrder"].ToString()),
+                        IdProduct = int.Parse(reader["IdProduct"].ToString()),
+                        Amount = int.Parse(reader["Amount"].ToString()),
+                        CreatedAt = DateTime.Parse(reader["CreatedAt"].ToString())
+                    };
 
                 case false:
-                    return -1;
+                    return null;
             }
         }
 
@@ -99,9 +105,28 @@ namespace Zadanie_5.Services
             await command.ExecuteNonQueryAsync();
         }
 
-        public int InsertIntoProduct_Warehouse(int idOrder, Product product)
+        public async Task<int> InsertIntoProduct_Warehouse(Product product, Order order)
         {
-            throw new System.NotImplementedException();
+            await using var connection = new SqlConnection(_configuration.GetConnectionString("ProductionDb"));
+
+            var sqlCommand =
+                "INSERT INTO Product_Warehouse (IdWarehouse,IdProduct,IdOrder,Amount,Price,CreatedAt) VALUES (@idWarehouse,@idProduct,@idOrder,@amount,@price,@createdAt); SELECT SCOPE_IDENTITY()";
+
+            await using var command = new SqlCommand(sqlCommand, connection);
+
+            command.Parameters.AddWithValue("@idWarehouse", product.IdWarehouse);
+            command.Parameters.AddWithValue("@idProduct", product.IdProduct);
+            command.Parameters.AddWithValue("@idOrder", order.IdOrder);
+            command.Parameters.AddWithValue("@amount", order.Amount);
+            command.Parameters.AddWithValue("@price", 1);
+            command.Parameters.AddWithValue("@createdAt", DateTime.Now);
+
+            await connection.OpenAsync();
+            var reader = await command.ExecuteReaderAsync();
+
+            await reader.ReadAsync();
+
+            return decimal.ToInt32(reader.GetDecimal(0));
         }
     }
 }
